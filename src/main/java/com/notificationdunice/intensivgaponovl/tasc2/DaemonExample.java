@@ -1,9 +1,8 @@
 package com.notificationdunice.intensivgaponovl.tasc2;
 
 import java.util.Scanner;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Exchanger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Задача 2.3
@@ -14,16 +13,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class DaemonExample {
     public void demon() {
-        Exchanger<String> exchanger = new Exchanger<>();
-        AtomicReference <CountDownLatch> countDownLatch = new AtomicReference<>(new CountDownLatch(1));
+        BlockingQueue<String> queue = new LinkedBlockingQueue<>();
 
         Thread daemonThread = new Thread(() -> {
             try {
                 while (true) {
-                    String command = exchanger.exchange(null);
+                    String command = queue.take();
                     if ("ПОДЪЕМ".equals(command)) {
                         System.out.println("ОТБОЙ");
-                        countDownLatch.get().countDown();
+                        synchronized (this) {
+                            this.notifyAll();
+                        }
                     }
                 }
             } catch (InterruptedException e) {
@@ -38,10 +38,11 @@ public class DaemonExample {
                 System.out.print("Введите команду: ");
                 String input = scanner.nextLine();
                 if ("ПОДЪЕМ".equals(input)) {
-                    exchanger.exchange(input);
-                    countDownLatch.get().await();
-                    countDownLatch.set(new CountDownLatch(1));
-                }
+                    queue.put(input);
+                    synchronized (this) {
+                        wait();
+                    }
+                }else if ("ВЫХОД".equals(input)) break;
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

@@ -40,17 +40,17 @@ public class SetTreadSafeExam {
                     System.out.println("Работает " + Thread.currentThread().getName());
                     if (set.remove(Thread.currentThread().getName())) {
                         System.out.println(Thread.currentThread().getName() + " удаление выполнено");
+                        latch.countDown();
+                        return;
                     }
                     if (set.isEmpty()) {
                         break;
                     }
-                    Thread.yield();
                 }
-                latch.countDown();
             });
         }
-        latch.await();
         executorService.shutdown();
+        latch.await();
         System.out.println("Количество итераций потоков: " + iterationCounter.get());
     }
 }

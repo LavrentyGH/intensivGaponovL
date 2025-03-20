@@ -1,7 +1,6 @@
 package com.notificationdunice.intensivgaponovl.tasc1;
 
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -11,15 +10,7 @@ import java.util.Set;
  * изменения порядка следования элементов.
  */
 public class RemoveDuplicatesFromList {
-    public List<Integer> withoutChangingOrderElements(List<Integer> list) {
-        Set<Integer> unique = new HashSet<>();
-        List<Integer> result = new ArrayList<>();
-
-        for (Integer num : list) {
-            if (unique.add(num)) {
-                result.add(num);
-            }
-        }
-        return result;
+    public Set<Integer> withoutChangingOrderElements(List<Integer> list) {
+        return new LinkedHashSet<>(list);
     }
 }
