@@ -1,4 +1,4 @@
-package com.notificationdunice.intensivgaponovl.tasc1;
+package com.notificationdunice.intensivgaponovl.task1;
 
 
 /**

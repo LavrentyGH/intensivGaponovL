@@ -1,4 +1,4 @@
-package com.notificationdunice.intensivgaponovl.tasc1;
+package com.notificationdunice.intensivgaponovl.task1;
 
 import java.util.LinkedHashSet;
 import java.util.List;
