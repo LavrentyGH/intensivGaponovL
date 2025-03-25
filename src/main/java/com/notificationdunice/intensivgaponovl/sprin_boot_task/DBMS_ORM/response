@@ -1,0 +1,112 @@
+В MongoDB базе данных BookStore есть коллекция Books с данными следующей структуры:
+{
+"id": 1,
+"title": "To Kill a Mockingbird",
+"publishingYear": 1960,
+"authorName": "Harper Lee",
+"price": 10.99,
+"amountOfPages": 281
+}
+Написать запросы для:
+
+a) Поиска книги с названием "1984".
+
+db.Books.find({ title: "1984" }).pretty()
+
+b) Поиска книг, опубликованных раньше 1950 года.
+Используйте метод pretty() для вывода результатов в удобочитаемом формате
+
+db.Books.find({ publishingYear: { $lt: 1950 } }).pretty()
+
+
+В PostgreSQL базе данных онлайн-магазина есть три таблицы:
+-- Пользователи
+CREATE TABLE users (
+ id SERIAL PRIMARY KEY, -- Идентификатор пользователя
+ username VARCHAR(100) NOT NULL UNIQUE, -- Имя пользователя
+ email VARCHAR(100) NOT NULL UNIQUE, -- Электронная почта
+ password VARCHAR(100) NOT NULL, -- Пароль
+ registered_at TIMESTAMP NOT NULL -- Дата регистрации
+);
+--Товары
+CREATE TABLE products (
+ id SERIAL PRIMARY KEY, -- Идентификатор товара
+ name VARCHAR(100) NOT NULL, -- Название товара
+ description TEXT, -- Описание
+ price DECIMAL(10, 2) NOT NULL, -- Цена одной единицы товара
+stock INT NOT NULL -- Количество оставшихся единиц товара
+);
+-- Заказы. В одном заказе только один вид товара, но любое его количество.
+-- Пример: 5 единиц товара "Карандаш".
+CREATE TABLE orders (
+ id SERIAL PRIMARY KEY, -- Идентификатор заказа
+ user_id INT NOT NULL, -- Идентификатор пользователя
+ order_date TIMESTAMP NOT NULL, -- Дата заказа
+ product_id INT NOT NULL, -- Идентификатор товара
+ quantity INT NOT NULL -- Количество
+);
+--Внешние ключи
+ALTER TABLE orders ADD CONSTRAINT fk_user
+FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE orders ADD CONSTRAINT fk_product
+FOREIGN KEY (product_id) REFERENCES products(id);
+Написать запросы:
+
+a) Выведите id, username и общую сумму заказов для пользователей, которые суммарно потратили на заказы более 10 000.
+
+SELECT
+    u.id,
+    u.username,
+    SUM(o.quantity * p.price) AS total_spent
+FROM users u
+JOIN orders o ON u.id = o.user_id
+JOIN products p ON o.product_id = p.id
+GROUP BY u.id, u.username
+HAVING SUM(o.quantity * p.price) > 10000;
+
+b) Найти пользователей, заказавших суммарно более 5 единиц одного и того же товара (возможно, за несколько разных
+заказов по N единиц в каждом). Выведите id и username пользователей, product_id товара, который был заказан в
+количестве более 5 единиц, и суммарное количество единиц этого товара, заказанное пользователем.
+
+SELECT
+    u.id,
+    u.username,
+    o.product_id,
+    SUM(o.quantity) AS total_quantity
+FROM users u
+JOIN orders o ON u.id = o.user_id
+GROUP BY u.id, u.username, o.product_id
+HAVING SUM(o.quantity) > 5;
+
+c) Найти товары, которые еще ни разу никто не заказывал. Вывести их id и name. (2 с усложнением)
+
+SELECT
+    p.id,
+    p.name
+FROM products p
+LEFT JOIN orders o ON p.id = o.product_id
+WHERE o.product_id IS NULL;
+
+Дана база данных из задания 2. Оптимизировать запрос ниже. Описать шаги, необходимые для оптимизации. (3)
+SELECT o.id, o.order_date, p.name AS product_name, p.price, u.username
+FROM orders o
+JOIN users u ON o.user_id = u.id
+JOIN products p ON o.product_id = p.id
+WHERE u.id = 123
+AND o.order_date BETWEEN '2023-01-01' AND '2023-12-31';
+
+SELECT
+    o.id,
+    o.order_date,
+    p.name AS product_name,
+    p.price,
+    u.username
+FROM orders o
+INNER JOIN users u ON o.user_id = u.id
+INNER JOIN products p ON o.product_id = p.id
+WHERE o.user_id = 123
+  AND o.order_date BETWEEN '2023-01-01' AND '2023-12-31';
+
+  1. Заменил u.id = 123 на o.user_id = 123 так мы PostgreSQL сможет сначало отфильтровать а потом подгрузить пользователей.
+  2. так же мне кажется разумным создать индекс:
+   CREATE INDEX idx_orders_user_date ON orders(user_id, order_date);
