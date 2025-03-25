@@ -1,4 +1,4 @@
-package com.notificationdunice.intensivgaponovl.tasc2;
+package com.notificationdunice.intensivgaponovl.task2;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
