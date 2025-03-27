@@ -1,0 +1,81 @@
+1 Написать Maven-команду, которая: 1) удалит файлы, созданные во время предыдущей сборки проекта, 2) скомпилирует код,
+выполнит тесты и упакует результат в jar, 3) выполнит эти шаги, используя конфигурацию из профиля production. (1)
+
+mvn clean package -Pproduction
+
+2 В директории src/main/java/com/example/ находится файл App.java, который представляет собой Java-приложение. Вам необходимо написать Dockerfile, который:
+Использует multi-stage build:
+На первой стадии должен использоваться Maven для сборки приложения.
+На второй стадии приложение должно быть запущено с помощью openjdk:17-jdk-slim.
+Открывает порт 8080, чтобы его можно было использовать для обращения к приложению.
+Помимо Dockerfile, в решении должны быть команды для его сборки и запуска контейнера.
+
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+
+WORKDIR /app
+
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+FROM openjdk:17-jdk-slim
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+Сборка Docker-образа
+docker build -t my-java-app .
+
+Запуск контейнера
+docker run -p 8080:8080 my-java-app
+
+3 В директории spring-boot-app/target/ находится заранее собранный jar-файл приложения: spring-boot-app-1.0-SNAPSHOT.jar.
+Напишите docker-compose файл, который загрузит приложение в контейнер и запустит его, используя в качестве базового
+образа openjdk:11-jre-slim. (4)
+
+version: '3.8'
+
+services:
+  spring-app:
+    image: openjdk:11-jre-slim
+    container_name: spring-boot-app
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./spring-boot-app/target/spring-boot-app-1.0-SNAPSHOT.jar:/app/app.jar
+    working_dir: /app
+    command: ["java", "-jar", "app.jar"]
+
+4 Создайте класс конфигурации SecurityConfig. Включите CORS. Включите защиту от CSRF с помощью CookieCsrfTokenRepository.
+Разрешите все запросы к конечным точкам /api/auth/. Требуйте аутентификации для всех остальных запросов. Настройте OAuth2
+Resource Server на использование JWT для аутентификации. (6)**
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .cors().and()
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            )
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**").permitAll() // Разрешаем доступ к /api/auth/**
+                .anyRequest().authenticated() // Остальные — требуют аутентификацию
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt()
+            );
+        return http.build();
+    }
+}
